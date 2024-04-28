@@ -34,63 +34,16 @@ def main():
 
 
 def handle_dialog(req, res):
-    user_id = req['session']['user_id']
-
     if req['session']['new']:
-        sessionStorage[user_id] = {
-            'suggests': [
-                "Не хочу.",
-                "Не буду.",
-                "Отстань!",
-            ],
-            'animal': 'Слона'
-        }
-
-        res['response']['text'] = 'Привет! Купи слона!'
-        res['response']['buttons'] = get_suggests(user_id)
+        res['response']['text'] = 'Я умею переводить текст с русского на английский!'
         return
 
-    for satisfy in ['ладно', 'куплю', 'покупаю', 'хорошо']:
-        if satisfy in req['request']['original_utterance'].lower():
-            if sessionStorage[user_id]['animal'] == 'Слона':
-                # Пользователь согласился, прощаемся.
-                res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
-                sessionStorage[user_id]['animal'] = 'Кролика'
-            else:
-                res['response']['text'] = 'Кролика можно найти на Яндекс.Маркете!'
-                res['response']['end_session'] = True
-                return
-
-    # Если нет, то убеждаем его купить слона / кролика!
-    res['response']['text'] = \
-        f"Все говорят '{req['request']['original_utterance']}', а ты купи {sessionStorage[user_id]['animal']}!"
-    res['response']['buttons'] = get_suggests(user_id)
-
-
-# Функция возвращает две подсказки для ответа.
-def get_suggests(user_id):
-    session = sessionStorage[user_id]
-
-    # Выбираем две первые подсказки из массива.
-    suggests = [
-        {'title': suggest, 'hide': True}
-        for suggest in session['suggests'][:2]
-    ]
-
-    # Убираем первую подсказку, чтобы подсказки менялись каждый раз.
-    session['suggests'] = session['suggests'][1:]
-    sessionStorage[user_id] = session
-
-    # Если осталась только одна подсказка, предлагаем подсказку
-    # со ссылкой на Яндекс.Маркет.
-    if len(suggests) < 2:
-        suggests.append({
-            "title": "Ладно",
-            "url": f"https://market.yandex.ru/search?text={sessionStorage[user_id]['animal']}",
-            "hide": True
-        })
-
-    return suggests
+    parse = req['request']['original_utterance'].split()
+    if 'переведи' in parse[0].lower() and 'слово' in parse[1].lower():
+        res['response']['text'] = \
+            f"'{translator.translate(' '.join(parse[2:]))}"
+    else:
+        res['response']['text'] = 'Отправьте запрос следующего формата: "Переведи(-те) слово [слово | предложение]".'
 
 
 if __name__ == '__main__':
